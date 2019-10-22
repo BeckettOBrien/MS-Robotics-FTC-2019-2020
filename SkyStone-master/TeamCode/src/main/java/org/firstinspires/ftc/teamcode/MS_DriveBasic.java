@@ -104,16 +104,7 @@ public class MS_DriveBasic extends OpMode
      */
     @Override
     public void loop() {
-        // Choose to drive using either Tank Mode, or POV Mode
-        // Comment out the method that's not used.  The default below is POV.
-
-        // POV Mode uses left stick to go forward, and right stick to turn.
-        // - This uses basic math to combine motions and is easier to drive straight.
-
-        // Tank Mode uses one stick to control each wheel.
-        // - This requires no math, but it is hard to drive forward slowly and keep straight.
-        // leftPower  = -gamepad1.left_stick_y ;
-        // rightPower = -gamepad1.right_stick_y ;
+        //Use math to figure out how to power motors (CREDIT: dmssargent on FTC Forums)
         double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
         double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x * -1;
@@ -121,6 +112,16 @@ public class MS_DriveBasic extends OpMode
         final double v2 = r * Math.sin(robotAngle) - rightX;
         final double v3 = r * Math.sin(robotAngle) + rightX;
         final double v4 = r * Math.cos(robotAngle) - rightX;
+
+        // Send calculated power to wheels
+        lfDrive.setPower(v1);
+        rfDrive.setPower(v2);
+        lbDrive.setPower(v3);
+        rbDrive.setPower(v4);
+
+        // Show the elapsed game time and wheel power.
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        //telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
 
         // Send calculated power to wheels
         lfDrive.setPower(v1);
