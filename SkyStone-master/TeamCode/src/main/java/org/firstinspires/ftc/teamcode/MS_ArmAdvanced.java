@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 /**
  * This file contains an example of an iterative (Non-Linear) "OpMode".
@@ -60,9 +61,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  Right-(-)543 Left-(-)524
  */
 
-@TeleOp(name="Arm Basic", group="Iterative Opmode")
+@TeleOp(name="Arm Advanced", group="Iterative Opmode")
 //@Disabled
-public class MS_ArmBasic extends OpMode
+public class MS_ArmAdvanced extends OpMode
 {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -75,10 +76,6 @@ public class MS_ArmBasic extends OpMode
     private DcMotor lArm = null;
 
     private Servo armServo = null;
-
-    private int[] down_position = {-1191, -1166};
-    private int[] back_position = {0, 0};
-    private int[] drop_position = {-543, -524};
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -106,12 +103,14 @@ public class MS_ArmBasic extends OpMode
         rArm.setDirection(DcMotor.Direction.REVERSE);
         //lArm.setDirection(DcMotor.Direction.REVERSE);
 
-        rArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        lArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        rArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        lArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Tell the driver that initialization is complete.
         telemetry.addData("Status", "Initialized");
-        telemetry.addLine("Make sure to put arm in back position before hitting Start.");
     }
 
     /*
@@ -127,8 +126,6 @@ public class MS_ArmBasic extends OpMode
     @Override
     public void start() {
         //armServo.setPosition(0);
-        rArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         runtime.reset();
     }
 
@@ -141,10 +138,11 @@ public class MS_ArmBasic extends OpMode
         double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
         double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x * -1;
-        final double v1 = r * Math.cos(robotAngle) + rightX;
-        final double v2 = r * Math.sin(robotAngle) - rightX;
-        final double v3 = r * Math.sin(robotAngle) + rightX;
-        final double v4 = r * Math.cos(robotAngle) - rightX;
+        final double v1 = Range.clip(r * Math.cos(robotAngle) + rightX, -0.75, 0.75);
+        final double v2 = Range.clip(r * Math.sin(robotAngle) - rightX, -0.75, 0.75);
+        final double v3 = Range.clip(r * Math.sin(robotAngle) + rightX, -0.75, 0.75);
+        final double v4 = Range.clip(r * Math.cos(robotAngle) - rightX, -0.75, 0.75);
+
 
         // Send calculated power to wheels
         lfDrive.setPower(v1);
@@ -157,78 +155,21 @@ public class MS_ArmBasic extends OpMode
         //telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
 
         if (gamepad1.a) {
-            armServo.setPosition(0);
+            armServo.setPosition(1);
         } else if (gamepad1.b) {
             armServo.setPosition(0.5);
         }
 
-        if ((rArm.getMode() == DcMotor.RunMode.RUN_TO_POSITION) && (lArm.getMode() == DcMotor.RunMode.RUN_TO_POSITION)) {
-            /*if ((rArm.getTargetPosition() == down_position[0]) && (rArm.getCurrentPosition() > down_position[0])) {
-                rArm.setPower(0);
-                rArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            }
-            if ((lArm.getTargetPosition() == down_position[1]) && (lArm.getCurrentPosition() > down_position[1])) {
-                lArm.setPower(0);
-                lArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            }*/
-
-            if ((rArm.getCurrentPosition() == down_position[0]) || (rArm.getCurrentPosition() == back_position[0]) || (rArm.getCurrentPosition() == drop_position[0])) {
-                rArm.setPower(0);
-                lArm.setPower(0);
-                rArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                lArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            } else if ((lArm.getCurrentPosition() == down_position[1]) || (lArm.getCurrentPosition() == back_position[1]) || (lArm.getCurrentPosition() == drop_position[1])) {
-                rArm.setPower(0);
-                lArm.setPower(0);
-                rArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                lArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            }
-
-            if (Math.abs(rArm.getTargetPosition() - rArm.getCurrentPosition()) < 30) {
-                //rArm.setPower(0.1);
-            }
-            if (Math.abs(lArm.getTargetPosition() - lArm.getCurrentPosition()) < 30) {
-                //lArm.setPower(0.1);
-            }
-        }
-
         if (gamepad1.right_trigger > 0) {
-            rArm.setTargetPosition(down_position[0]);
-            rArm.setPower(0.3);
-            lArm.setTargetPosition(down_position[1]);
-            lArm.setPower(0.3);
-            rArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            lArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        } else if (gamepad1.left_trigger > 0) {
-            rArm.setTargetPosition(drop_position[0]);
-            rArm.setPower(0.3);
-            lArm.setTargetPosition(drop_position[1]);
-            lArm.setPower(0.3);
-            rArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            lArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        } else if (gamepad1.x) {
-            rArm.setTargetPosition(back_position[0]);
-            rArm.setPower(0.3);
-            lArm.setTargetPosition(back_position[1]);
-            lArm.setPower(0.3);
-            rArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            lArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        }
-
-/*
-        if (gamepad1.left_bumper) {
-            rArm.setPower(0.3);
-            lArm.setPower(0.3);
-        } else if (gamepad1.right_bumper) {
             rArm.setPower(-0.3);
             lArm.setPower(-0.3);
+        } else if (gamepad1.left_trigger > 0) {
+            rArm.setPower(0.3);
+            lArm.setPower(0.3);
         } else {
             rArm.setPower(0);
             lArm.setPower(0);
         }
- */
-
-        telemetry.addData("Arms", "Right: " + rArm.getCurrentPosition() + " Left: " + lArm.getCurrentPosition());
     }
 
     /*
