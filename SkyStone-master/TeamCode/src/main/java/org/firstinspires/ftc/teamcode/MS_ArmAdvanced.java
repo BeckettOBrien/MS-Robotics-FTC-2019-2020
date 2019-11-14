@@ -126,6 +126,10 @@ public class MS_ArmAdvanced extends OpMode
     @Override
     public void start() {
         //armServo.setPosition(0);
+        rArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         runtime.reset();
     }
 
@@ -136,12 +140,12 @@ public class MS_ArmAdvanced extends OpMode
     public void loop() {
         //Use math to figure out how to power motors (CREDIT: dmssargent on FTC Forums)
         double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
-        double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI / 4;
+        double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x * -1) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x * -1;
-        final double v1 = Range.clip(r * Math.cos(robotAngle) + rightX, -0.75, 0.75);
-        final double v2 = Range.clip(r * Math.sin(robotAngle) - rightX, -0.75, 0.75);
-        final double v3 = Range.clip(r * Math.sin(robotAngle) + rightX, -0.75, 0.75);
-        final double v4 = Range.clip(r * Math.cos(robotAngle) - rightX, -0.75, 0.75);
+        final double v1 = Range.clip(r * Math.cos(robotAngle) + rightX, -1, 1);
+        final double v2 = Range.clip(r * Math.sin(robotAngle) - rightX, -1, 1);
+        final double v3 = Range.clip(r * Math.sin(robotAngle) + rightX, -1, 1);
+        final double v4 = Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
 
 
         // Send calculated power to wheels
@@ -152,12 +156,21 @@ public class MS_ArmAdvanced extends OpMode
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
-        //telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
+        telemetry.addData("Motors", "lf %s, rf %s, lb %s, rb %s", lfDrive.getCurrentPosition(), rfDrive.getCurrentPosition(), lbDrive.getCurrentPosition(), rbDrive.getCurrentPosition());
 
         if (gamepad1.a) {
             armServo.setPosition(1);
         } else if (gamepad1.b) {
             armServo.setPosition(0.5);
+        } else if (gamepad1.x) {
+            rbDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            rfDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            lbDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            lfDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            rbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
         if (gamepad1.right_trigger > 0) {
@@ -170,6 +183,8 @@ public class MS_ArmAdvanced extends OpMode
             rArm.setPower(0);
             lArm.setPower(0);
         }
+
+        telemetry.addData("Arms: ", "Right: %s | Left: %s", rArm.getCurrentPosition(), lArm.getCurrentPosition());
     }
 
     /*
