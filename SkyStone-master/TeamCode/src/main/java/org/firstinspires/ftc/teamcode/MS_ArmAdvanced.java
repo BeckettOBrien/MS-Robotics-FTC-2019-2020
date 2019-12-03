@@ -138,15 +138,18 @@ public class MS_ArmAdvanced extends OpMode
      */
     @Override
     public void loop() {
+        double lefty = gamepad1.left_stick_y;
+        double leftx = -gamepad1.left_stick_x;
+        double rightx = -gamepad1.right_stick_x;
+
         //Use math to figure out how to power motors (CREDIT: dmssargent on FTC Forums)
         double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
         double robotAngle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x * -1) - Math.PI / 4;
         double rightX = gamepad1.right_stick_x * -1;
-        final double v1 = Range.clip(r * Math.cos(robotAngle) + rightX, -1, 1);
-        final double v2 = Range.clip(r * Math.sin(robotAngle) - rightX, -1, 1);
-        final double v3 = Range.clip(r * Math.sin(robotAngle) + rightX, -1, 1);
-        final double v4 = Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
-
+        final double v1 = gamepad1.left_stick_y - gamepad1.left_stick_x - gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) + rightX, -1, 1);
+        final double v2 = gamepad1.left_stick_y + gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.sin(robotAngle) - rightX, -1, 1);
+        final double v3 = gamepad1.left_stick_y + gamepad1.left_stick_x - gamepad1.right_stick_x;//Range.clip(r * Math.sin(robotAngle) + rightX, -1, 1);
+        final double v4 = gamepad1.left_stick_y - gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
 
         // Send calculated power to wheels
         lfDrive.setPower(v1);

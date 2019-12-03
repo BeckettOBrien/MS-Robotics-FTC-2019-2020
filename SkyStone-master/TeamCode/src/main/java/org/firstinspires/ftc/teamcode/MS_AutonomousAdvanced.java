@@ -74,7 +74,7 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
     private int[] down_position = {-1191, -1166};
     private int[] back_position = {0, 0};
     private int[] drop_position = {-543, -524};
-    private int[] holding_position = {-1090, -1022};
+    private int[] holding_position = {-996, -1050};
 
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
@@ -155,20 +155,37 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
         lArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         if (opModeIsActive()) {
+            //joystickDrive(0, -0.5, 0, 0);
+            rbDrive.setPower(-0.75);
+            lbDrive.setPower(-0.75);
+            rfDrive.setPower(-0.75);
+            lfDrive.setPower(-0.75);
+            sleep(750);
+            stopDrive();
             boolean notInRange = true;
             while (notInRange && opModeIsActive()) {
                 Recognition recognition = recognizeStone();
                 sleep(500);
+                if (recognition == null) {
+//                    joystickDrive(-1, 0, 0, 0);
+                    rbDrive.setPower(0.75);
+                    lbDrive.setPower(-0.75);
+                    rfDrive.setPower(-0.75);
+                    lfDrive.setPower(0.75);
+                    sleep(250);
+                    stopDrive();
+                    continue;
+                }
                 float size = (recognition.getWidth()*recognition.getHeight());
                 telemetry.addData("Size: ", size);
-                if (size < 49000) { //max is 60000
+                if (size < 51000) { //max is 60000
                     telemetry.addLine("Not in range! " + size);
                     telemetry.update();
-                    joystickDrive(0, -1, 0, 0);
+                    joystickDrive(0, -0.5, 0, 0);
                     sleep(500);
                     stopDrive();
                 } else if (size > 60000) {
-                    joystickDrive(0, 1, 0, 0);
+                    joystickDrive(0, 0.5, 0, 0);
                     sleep(500);
                     stopDrive();
                 } else {
@@ -178,32 +195,47 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
                 }
             }
 
-            for (int i = 0; i < 6; i++) {
-                if (!opModeIsActive()) {
-                    break;
-                }
-                Recognition recognition = recognizeStone();
-                if (recognition.getLabel() == "Skystone") {
-                    while (recognizeStone().getLeft() > 350) {
-                        joystickDrive(0, 0, -0.5, 0);
-                        sleep(250);
-                        stopDrive();
-                        sleep(250);
-                    }
-                    pickupStone(0);
-                    stop();
-                    while (opModeIsActive()) {
-                        recognition = recognizeStone();
-                        telemetry.addData("Dist from left=%s", recognition.getLeft());
-                        telemetry.update();
-                    }
-                    break;
-                } else {
-                    joystickDrive(-1, 0, 0, 0);
-                    sleep(500);
+            while ((recognizeStone().getLeft() > 350 || recognizeStone().getLeft() < 300) && opModeIsActive()) {
+                if (recognizeStone().getLeft() > 350) {
+                    joystickDrive(0, 0, 0.5, 0);
+                    sleep(250);
                     stopDrive();
+                    sleep(250);
+                } else if (recognizeStone().getLeft() < 300) {
+                    joystickDrive(0, 0, -0.5, 0);
+                    sleep(250);
+                    stopDrive();
+                    sleep(250);
                 }
+                telemetry.addData("Dist from left=", recognizeStone().getLeft());
+                telemetry.update();
             }
+
+            pickupStone(0);
+            rbDrive.setPower(0.5);
+            lbDrive.setPower(0.5);
+            rfDrive.setPower(0.5);
+            lfDrive.setPower(0.5);
+            sleep(250);
+            stopDrive();
+            joystickDrive(0, 0, 0.5, 0);
+            sleep(1500);
+            joystickDrive(0, -1, 0, 0);
+            sleep(4750);
+            stopDrive();
+            armServo.setPosition(0.5);
+            joystickDrive(0, 1, 0, 0);
+            sleep(1000);
+            stopDrive();
+            stop();
+
+            while (!recognizeStone().getLabel().equals("Skystone")) {
+                joystickDrive(-1, 0, 0, 0);
+                sleep (750);
+                stopDrive();
+            }
+
+            pickupStone(0);
 
         }
 
@@ -213,16 +245,16 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
     }
 
     private void pickupStone(int inchesFromDrop) {
+        rArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        lArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armServo.setPosition(0.5);
         moveArm(0, 25);
-        telemetry.addLine("Finished moving!");
-        telemetry.update();
         armServo.setPosition(1);
         sleep(1000);
         moveArm(3, 5);
         sleep(500);
-        armServo.setPosition(0.5);
-        sleep(2000);
+        //armServo.setPosition(0.5);
+        //sleep(2000);
 //        rbDrive.setPower(-0.5);
 //        rfDrive.setPower(-0.5);
 //        lbDrive.setPower(0.5);
@@ -292,14 +324,18 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
     }
 
     private void joystickDrive(double leftStick_x, double leftStick_y, double rightStick_x, double rightStick_y) {
+        double lefty = gamepad1.left_stick_y;
+        double leftx = -gamepad1.left_stick_x;
+        double rightx = -gamepad1.right_stick_x;
+
         //Use math to figure out how to power motors (CREDIT: dmssargent on FTC Forums)
         double r = Math.hypot(leftStick_x, leftStick_y);
         double robotAngle = Math.atan2(leftStick_y, leftStick_x * -1) - Math.PI / 4;
         double rightX = rightStick_x * -1;
-        final double v1 = Range.clip(r * Math.cos(robotAngle) + rightX, -1, 1);
-        final double v2 = Range.clip(r * Math.sin(robotAngle) - rightX, -1, 1);
-        final double v3 = Range.clip(r * Math.sin(robotAngle) + rightX, -1, 1);
-        final double v4 = Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
+        final double v1 = gamepad1.left_stick_y - gamepad1.left_stick_x - gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) + rightX, -1, 1);
+        final double v2 = gamepad1.left_stick_y + gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.sin(robotAngle) - rightX, -1, 1);
+        final double v3 = gamepad1.left_stick_y + gamepad1.left_stick_x - gamepad1.right_stick_x;//Range.clip(r * Math.sin(robotAngle) + rightX, -1, 1);
+        final double v4 = gamepad1.left_stick_y - gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
 
         lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -350,7 +386,7 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
             "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-       tfodParameters.minimumConfidence = 0.8;
+       tfodParameters.minimumConfidence = 0.70;
        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
@@ -368,11 +404,14 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
                     int i = 0;
                     for (Recognition recognition : updatedRecognitions) {
                         telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                                recognition.getLeft(), recognition.getTop());
-                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                                recognition.getRight(), recognition.getBottom());
-                        return recognition;
+                        telemetry.addData("Object width/height:", recognition.getWidth()/recognition.getHeight());
+                        if ((recognition.getWidth()/recognition.getHeight()) < 2.1 && (recognition.getWidth()/recognition.getHeight()) > 1.25) {
+                            if (recognition.getLabel().equals("Skystone")) {
+                                return recognition;
+                            } else {
+                                return null;
+                            }
+                        }
                     }
                     telemetry.update();
                 }
