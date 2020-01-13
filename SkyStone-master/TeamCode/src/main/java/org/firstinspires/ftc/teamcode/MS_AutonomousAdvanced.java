@@ -29,15 +29,20 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IntegratingGyroscope;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
@@ -70,6 +75,9 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
     private DcMotor lArm = null;
 
     private Servo armServo = null;
+
+    IntegratingGyroscope gyro;
+    ModernRoboticsI2cGyro mrGyro;
 
     private int[] down_position = {-1191, -1166};
     private int[] back_position = {0, 0};
@@ -115,6 +123,9 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
 
         armServo = hardwareMap.get(Servo.class, "armServo");
 
+        mrGyro = hardwareMap.get(ModernRoboticsI2cGyro.class, "gyro");
+        gyro = (IntegratingGyroscope)mrGyro;
+
         rbDrive.setDirection(DcMotor.Direction.REVERSE);
         rfDrive.setDirection(DcMotor.Direction.REVERSE);
 
@@ -146,6 +157,18 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
             tfod.activate();
         }
 
+        telemetry.log().add("Gyro Calibrating. Do Not Move!");
+        mrGyro.calibrate();
+
+        while (!isStopRequested() && mrGyro.isCalibrating())  {
+            telemetry.addData("calibrating", "now");
+            telemetry.update();
+            sleep(50);
+        }
+
+        telemetry.log().clear(); telemetry.log().add("Gyro Calibrated. Press Start.");
+        telemetry.clear(); telemetry.update();
+
         /** Wait for the game to begin */
         telemetry.addData(">", "Press Play to start op mode");
         telemetry.update();
@@ -155,11 +178,7 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
         lArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         if (opModeIsActive()) {
-            //joystickDrive(0, -0.5, 0, 0);
-            rbDrive.setPower(-0.75);
-            lbDrive.setPower(-0.75);
-            rfDrive.setPower(-0.75);
-            lfDrive.setPower(-0.75);
+            joystickDrive(0, -0.5, 0, 0);
             sleep(750);
             stopDrive();
             boolean notInRange = true;
@@ -167,11 +186,7 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
                 Recognition recognition = recognizeStone();
                 sleep(500);
                 if (recognition == null) {
-//                    joystickDrive(-1, 0, 0, 0);
-                    rbDrive.setPower(0.75);
-                    lbDrive.setPower(-0.75);
-                    rfDrive.setPower(-0.75);
-                    lfDrive.setPower(0.75);
+                    joystickDrive(-1, 0, 0, 0);
                     sleep(250);
                     stopDrive();
                     continue;
@@ -197,14 +212,10 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
 
             while ((recognizeStone().getLeft() > 350 || recognizeStone().getLeft() < 300) && opModeIsActive()) {
                 if (recognizeStone().getLeft() > 350) {
-                    joystickDrive(0, 0, 0.5, 0);
-                    sleep(250);
-                    stopDrive();
+                    strafe(0.5, 250);
                     sleep(250);
                 } else if (recognizeStone().getLeft() < 300) {
-                    joystickDrive(0, 0, -0.5, 0);
-                    sleep(250);
-                    stopDrive();
+                    strafe(-0.5, 250);
                     sleep(250);
                 }
                 telemetry.addData("Dist from left=", recognizeStone().getLeft());
@@ -212,10 +223,7 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
             }
 
             pickupStone(0);
-            rbDrive.setPower(0.5);
-            lbDrive.setPower(0.5);
-            rfDrive.setPower(0.5);
-            lfDrive.setPower(0.5);
+            joystickDrive(0, 0.5, 0, 0);
             sleep(250);
             stopDrive();
             joystickDrive(0, 0, 0.5, 0);
@@ -323,19 +331,11 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
         return posIndex;
     }
 
-    private void joystickDrive(double leftStick_x, double leftStick_y, double rightStick_x, double rightStick_y) {
-        double lefty = gamepad1.left_stick_y;
-        double leftx = -gamepad1.left_stick_x;
-        double rightx = -gamepad1.right_stick_x;
-
-        //Use math to figure out how to power motors (CREDIT: dmssargent on FTC Forums)
-        double r = Math.hypot(leftStick_x, leftStick_y);
-        double robotAngle = Math.atan2(leftStick_y, leftStick_x * -1) - Math.PI / 4;
-        double rightX = rightStick_x * -1;
-        final double v1 = gamepad1.left_stick_y - gamepad1.left_stick_x - gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) + rightX, -1, 1);
-        final double v2 = gamepad1.left_stick_y + gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.sin(robotAngle) - rightX, -1, 1);
-        final double v3 = gamepad1.left_stick_y + gamepad1.left_stick_x - gamepad1.right_stick_x;//Range.clip(r * Math.sin(robotAngle) + rightX, -1, 1);
-        final double v4 = gamepad1.left_stick_y - gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
+    private void joystickDrive(double leftx, double lefty, double rightx, double righty) {
+        final double v1 = gamepad1.left_stick_y - gamepad1.left_stick_x - gamepad1.right_stick_x;
+        final double v2 = gamepad1.left_stick_y + gamepad1.left_stick_x + gamepad1.right_stick_x;
+        final double v3 = gamepad1.left_stick_y + gamepad1.left_stick_x - gamepad1.right_stick_x;
+        final double v4 = gamepad1.left_stick_y - gamepad1.left_stick_x + gamepad1.right_stick_x;
 
         lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -352,6 +352,22 @@ public class MS_AutonomousAdvanced extends LinearOpMode {
         telemetry.addLine(String.valueOf(v2));
         telemetry.addLine(String.valueOf(v3));
         telemetry.addLine(String.valueOf(v4));
+    }
+
+    private void strafe(double direction, double time) {
+        float targetAngle = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+        joystickDrive(direction, 0, 0, 0);
+        long startTime = System.currentTimeMillis(); //fetch starting time
+        while((System.currentTimeMillis() - startTime) < time) {
+            float zAngle = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+            if (zAngle < targetAngle) {
+                joystickDrive(direction, 0, -0.5, 0);
+            } else if (zAngle > targetAngle) {
+                joystickDrive(direction, 0, 0.5, 0);
+            }
+            // Turning Right Gyro (angle) Value: negative
+            // Turning Left Gyro (angle) Value: positive
+        }
     }
 
     private void stopDrive() {
