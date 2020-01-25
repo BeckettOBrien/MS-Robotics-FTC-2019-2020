@@ -152,10 +152,22 @@ public class MS_ArmAdvanced extends OpMode
         final double v4 = gamepad1.left_stick_y - gamepad1.left_stick_x + gamepad1.right_stick_x;//Range.clip(r * Math.cos(robotAngle) - rightX, -1, 1);
 
         // Send calculated power to wheels
-        lfDrive.setPower(v1);
-        rfDrive.setPower(v2);
-        lbDrive.setPower(v3);
-        rbDrive.setPower(v4);
+        if (gamepad1.y) {
+            lfDrive.setPower(v1);
+            rfDrive.setPower(v2);
+            lbDrive.setPower(v3);
+            rbDrive.setPower(v4);
+        } else if (gamepad1.x) {
+            lfDrive.setPower(Range.clip(v1, -0.25, 0.25));
+            rfDrive.setPower(Range.clip(v2, -0.25, 0.25));
+            lbDrive.setPower(Range.clip(v3, -0.25, 0.25));
+            rbDrive.setPower(Range.clip(v4, -0.25, 0.25));
+        } else {
+                lfDrive.setPower(Range.clip(v1, -0.75, 0.75));
+                rfDrive.setPower(Range.clip(v2, -0.75, 0.75));
+                lbDrive.setPower(Range.clip(v3, -0.75, 0.75));
+                rbDrive.setPower(Range.clip(v4, -0.75, 0.75));
+        }
 
         // Show the elapsed game time and wheel power.
         telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -166,14 +178,14 @@ public class MS_ArmAdvanced extends OpMode
         } else if (gamepad1.b) {
             armServo.setPosition(0.5);
         } else if (gamepad1.x) {
-            rbDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            rfDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            lbDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            lfDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            rbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            lbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            rbDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            rfDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            lbDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            lfDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            rbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            lbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
         if (gamepad1.right_trigger > 0) {

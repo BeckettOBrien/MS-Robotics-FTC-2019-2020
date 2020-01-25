@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 
 /**
@@ -65,10 +66,10 @@ public class MS_AutonomousNormalStoneRED extends LinearOpMode {
 
     private Servo armServo = null;
 
-    private int[] down_position = {-1191, -1166};
+    private int[] down_position = {-1600, -1600};
     private int[] back_position = {0, 0};
     private int[] drop_position = {-543, -524};
-    private int[] holding_position = {-996, -1050};
+    private int[] holding_position = {160, 40};
     private int[] holding2_position = {-1003, -999};
 
     @Override
@@ -103,13 +104,13 @@ public class MS_AutonomousNormalStoneRED extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         if (opModeIsActive()) {
             joystickDrive(0, 1, 0, 0);
-            sleep(750);
+            sleep(1000);
             stopDrive();
             pickupStone();
             joystickDrive(0, 0, 1, 0);
-            sleep(1100);
+            sleep(1250);
             joystickDrive(0, 1, 0, 0);
-            sleep(3500);
+            sleep(3250);
             stopDrive();
             armServo.setPosition(0.5);
             sleep(100);
@@ -117,6 +118,12 @@ public class MS_AutonomousNormalStoneRED extends LinearOpMode {
             sleep(1000);
             stopDrive();
         }
+    }
+
+    private void leftSideMotorPower() {
+        lfDrive.setPower(.1);
+        lbDrive.setPower(.1);
+
     }
 
     private void joystickDrive(double leftx, double lefty, double rightx, double righty) {
@@ -133,10 +140,10 @@ public class MS_AutonomousNormalStoneRED extends LinearOpMode {
         rbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Send calculated power to wheels
-        lfDrive.setPower(v1);
-        rfDrive.setPower(v2);
-        lbDrive.setPower(v3);
-        rbDrive.setPower(v4);
+        lfDrive.setPower(Range.clip(v1, -0.25, 0.25));
+        rfDrive.setPower(Range.clip(v2, -0.25, 0.25));
+        lbDrive.setPower(Range.clip(v3, -0.25, 0.25));
+        rbDrive.setPower(Range.clip(v4, -0.25, 0.25));
     }
 
     private int moveArm(int posIndex, int errorMargin) {
@@ -176,9 +183,11 @@ public class MS_AutonomousNormalStoneRED extends LinearOpMode {
             rArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             lArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         }
-        while (Math.abs(((rArm.getTargetPosition() * -1) - (rArm.getCurrentPosition() * -1))) > errorMargin) {
+        while (Math.abs(((lArm.getTargetPosition()) - (lArm.getCurrentPosition()))) > errorMargin) {
             rArm.setPower(0.3);
             lArm.setPower(0.3);
+            telemetry.addData("Arms: ", "Right: %s | Left: %s", rArm.getCurrentPosition(), lArm.getCurrentPosition());
+            telemetry.update();
         }
         rArm.setPower(0);
         lArm.setPower(0);
@@ -198,10 +207,10 @@ public class MS_AutonomousNormalStoneRED extends LinearOpMode {
         rArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armServo.setPosition(0.5);
-        moveArm(0, 25);
+        moveArm(0, 5);
         armServo.setPosition(1);
         sleep(1000);
-        moveArm(4, 5);
+        moveArm(3, 5);
         sleep(500);
     }
 }

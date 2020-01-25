@@ -67,6 +67,26 @@ public class MS_AutonomousBasic extends LinearOpMode {
 
     private Servo armServo = null;
 
+    private void joystickDrive(double leftx, double lefty, double rightx, double righty) {
+        lefty *= -1;
+
+        final double v1 = lefty - leftx - rightx;
+        final double v2 = lefty + leftx + rightx;
+        final double v3 = lefty + leftx - rightx;
+        final double v4 = lefty - leftx + rightx;
+
+        lfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rfDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rbDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        // Send calculated power to wheels
+        lfDrive.setPower(Range.clip(v1, -0.25, 0.25));
+        rfDrive.setPower(Range.clip(v2, -0.25, 0.25));
+        lbDrive.setPower(Range.clip(v3, -0.25, 0.25));
+        rbDrive.setPower(Range.clip(v4, -0.25, 0.25));
+    }
+
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
@@ -98,11 +118,11 @@ public class MS_AutonomousBasic extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         if (opModeIsActive()) {
-            armServo.setPosition(0.75);
+            armServo.setPosition(0.9);
             sleep(2000);
             rArm.setPower(-0.3);
             lArm.setPower(-0.3);
-            sleep(1000);
+            sleep(2000);
             rArm.setPower(0);
             lArm.setPower(0);
         }
